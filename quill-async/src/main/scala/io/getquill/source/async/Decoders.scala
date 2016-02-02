@@ -63,7 +63,10 @@ trait Decoders {
     }
 
   implicit val booleanDecoder: Decoder[Boolean] = decoder[Boolean] {
-    case byte: Byte         => byte == (1: Byte)
+    case v: Byte         => v == (1: Byte)
+    case v: Short        => v == (1: Short)
+    case v: Int          => v == 1
+    case v: Long         => v == 1L
   }
 
   implicit val byteDecoder: Decoder[Byte] = decoder[Byte] {
