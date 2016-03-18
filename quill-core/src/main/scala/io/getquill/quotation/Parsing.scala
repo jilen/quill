@@ -344,7 +344,8 @@ trait Parsing extends SchemaConfigParsing {
       }
     Parser[Operation] {
       case q"$a.contains[..$t]($b)" =>
-        println(":::::::::::::::::;parsing" + a)
+        BinaryOperation(astParser(a), SetOperator.`contains`, astParser(b))
+      case q"scala.this.Predef.$m($a).contains[..$t]($b)" if m.toString.endsWith("ArrayOps") =>
         BinaryOperation(astParser(a), SetOperator.`contains`, astParser(b))
       case unary(op) => op
     }
@@ -360,18 +361,13 @@ trait Parsing extends SchemaConfigParsing {
     tree.tpe <:< typeOf[Traversable[_]]
   }
 
-  val arrayValueParser: Parser[Value] = Parser[Value] {
-    case q"$pack.Array.apply($v1, ..$vs)"                                   => Set((v1 +: vs).map(astParser(_)))
-    case q"((scala.this.Predef.$m($v)))" if m.toString.endsWith("ArrayOps") => arrayValueParser(v)
-  }
-
   val valueParser: Parser[Value] = Parser[Value] {
     case q"null" => NullValue
     case Literal(c.universe.Constant(v)) => Constant(v)
     case q"((..$v))" if (v.size > 1) => Tuple(v.map(astParser(_)))
 
     case q"((scala.this.Predef.ArrowAssoc[$t1]($v1).$arrow[$t2]($v2)))" => Tuple(List(astParser(v1), astParser(v2)))
-    case `arrayValueParser`(v) => v
+    case q"$pack.Array.apply($v1, ..$vs)" => Set((v1 +: vs).map(astParser(_)))
     case tree @ q"$pack.$coll.apply[..$t](..$v)" if isTraversable(tree) => Set(v.map(astParser(_)))
   }
 
