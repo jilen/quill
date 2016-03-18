@@ -555,19 +555,44 @@ class SqlIdiomSpec extends Spec {
               "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (SELECT p.i FROM TestEntity2 p)"
           }
           "set" - {
-            "direct value" in {
-              val q = quote {
+            "as value" in {
+              val expectedSql = "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (1, 2)"
+              val q1 = quote {
                 qr1.filter(t => List(1, 2).contains(t.i))
               }
-              mirrorSource.run(q).sql mustEqual
-                "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (1, 2)"
+              val q2 = quote {
+                qr1.filter(t => Seq(1, 2).contains(t.i))
+              }
+              val q3 = quote {
+                qr1.filter(t => Set(1, 2).contains(t.i))
+              }
+              val q4 = quote {
+                qr1.filter(t => Array(1, 2).contains(t.i))
+              }
+              mirrorSource.run(q1).sql mustEqual expectedSql
+              mirrorSource.run(q2).sql mustEqual expectedSql
+              mirrorSource.run(q3).sql mustEqual expectedSql
+              mirrorSource.run(q4).sql mustEqual expectedSql
+
             }
             "as param" in {
-              val q = quote { (is: Set[Int]) =>
+              val expectedSql = "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (?)"
+              val q1 = quote { (is: List[Int]) =>
                 qr1.filter(t => is.contains(t.i))
               }
-              mirrorSource.run(q)(Set(1, 2)).sql mustEqual
-                "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (?)"
+              val q2 = quote { (is: Seq[Int]) =>
+                qr1.filter(t => is.contains(t.i))
+              }
+              val q3 = quote { (is: Set[Int]) =>
+                qr1.filter(t => is.contains(t.i))
+              }
+              val q4 = quote { (is: Array[Int]) =>
+                qr1.filter(t => is.contains(t.i))
+              }
+              mirrorSource.run(q1)(List(1, 2)).sql mustEqual expectedSql
+              mirrorSource.run(q2)(Seq(1, 2)).sql mustEqual expectedSql
+              mirrorSource.run(q3)(Set(1, 2)).sql mustEqual expectedSql
+              mirrorSource.run(q4)(Array(1, 2)).sql mustEqual expectedSql
             }
           }
         }

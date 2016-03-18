@@ -15,7 +15,6 @@ trait Parsing extends SchemaConfigParsing {
   case class Parser[T](p: PartialFunction[Tree, T])(implicit ct: ClassTag[T]) {
 
     def apply(tree: Tree) = {
-      println("parsing tree" + tree + " with " + this.getClass)
       unapply(tree).getOrElse {
         c.fail(s"Tree '$tree' can't be parsed to '${ct.runtimeClass.getSimpleName}'")
       }
@@ -344,28 +343,36 @@ trait Parsing extends SchemaConfigParsing {
         case "nonEmpty" => SetOperator.`nonEmpty`
       }
     Parser[Operation] {
-      case q"$a.contains[..$t]($b)" => BinaryOperation(astParser(a), SetOperator.`contains`, astParser(b))
-      case unary(op)                => op
+      case q"$a.contains[..$t]($b)" =>
+        println(":::::::::::::::::;parsing" + a)
+        BinaryOperation(astParser(a), SetOperator.`contains`, astParser(b))
+      case unary(op) => op
     }
   }
 
   private def isNumeric[T: WeakTypeTag] =
     c.inferImplicitValue(c.weakTypeOf[Numeric[T]]) != EmptyTree
 
+  private def is[T](tree: Tree)(implicit t: TypeTag[T]) =
+    tree.tpe <:< t.tpe
+
   private def isTraversable(tree: Tree) = {
     tree.tpe <:< typeOf[Traversable[_]]
   }
 
-  private def is[T](tree: Tree)(implicit t: TypeTag[T]) =
-    tree.tpe <:< t.tpe
+  val arrayValueParser: Parser[Value] = Parser[Value] {
+    case q"$pack.Array.apply($v1, ..$vs)"                                   => Set((v1 +: vs).map(astParser(_)))
+    case q"((scala.this.Predef.$m($v)))" if m.toString.endsWith("ArrayOps") => arrayValueParser(v)
+  }
 
   val valueParser: Parser[Value] = Parser[Value] {
-    case q"null"                         => NullValue
+    case q"null" => NullValue
     case Literal(c.universe.Constant(v)) => Constant(v)
-    case q"((..$v))" if (v.size > 1)     => Tuple(v.map(astParser(_)))
-    case tree @ q"$pack.$coll.apply[..$t](..$v)" if isTraversable(tree) =>
-      Set(v.map(astParser(_)))
+    case q"((..$v))" if (v.size > 1) => Tuple(v.map(astParser(_)))
+
     case q"((scala.this.Predef.ArrowAssoc[$t1]($v1).$arrow[$t2]($v2)))" => Tuple(List(astParser(v1), astParser(v2)))
+    case `arrayValueParser`(v) => v
+    case tree @ q"$pack.$coll.apply[..$t](..$v)" if isTraversable(tree) => Set(v.map(astParser(_)))
   }
 
   val actionParser: Parser[Ast] = Parser[Ast] {

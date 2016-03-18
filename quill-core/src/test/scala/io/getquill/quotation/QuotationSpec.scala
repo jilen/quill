@@ -332,9 +332,23 @@ class QuotationSpec extends Spec {
           }
         }
       }
-      "set" in {
-        val q = quote(collection.Set(1, 2))
-        quote(unquote(q)).ast mustEqual Set(List(Constant(1), Constant(2)))
+      "set" - {
+        "array" in {
+          val q = quote(Array(true, false))
+          quote(unquote(q)).ast mustEqual Set(List(Constant(true), Constant(false)))
+        }
+        "seq" in {
+          val q = quote(Seq(true, false))
+          quote(unquote(q)).ast mustEqual Set(List(Constant(true), Constant(false)))
+        }
+        "list" in {
+          val q = quote(List(true, false))
+          quote(unquote(q)).ast mustEqual Set(List(Constant(true), Constant(false)))
+        }
+        "set" in {
+          val q = quote(collection.Set(1, 2))
+          quote(unquote(q)).ast mustEqual Set(List(Constant(1), Constant(2)))
+        }
       }
     }
     "ident" in {
