@@ -14,10 +14,12 @@ trait Parsing extends SchemaConfigParsing {
 
   case class Parser[T](p: PartialFunction[Tree, T])(implicit ct: ClassTag[T]) {
 
-    def apply(tree: Tree) =
+    def apply(tree: Tree) = {
+      println("parsing tree" + tree + " with " + this.getClass)
       unapply(tree).getOrElse {
         c.fail(s"Tree '$tree' can't be parsed to '${ct.runtimeClass.getSimpleName}'")
       }
+    }
 
     def unapply(tree: Tree): Option[T] =
       tree match {
@@ -350,14 +352,19 @@ trait Parsing extends SchemaConfigParsing {
   private def isNumeric[T: WeakTypeTag] =
     c.inferImplicitValue(c.weakTypeOf[Numeric[T]]) != EmptyTree
 
+  private def isTraversable(tree: Tree) = {
+    tree.tpe <:< typeOf[Traversable[_]]
+  }
+
   private def is[T](tree: Tree)(implicit t: TypeTag[T]) =
     tree.tpe <:< t.tpe
 
   val valueParser: Parser[Value] = Parser[Value] {
-    case q"null" => NullValue
+    case q"null"                         => NullValue
     case Literal(c.universe.Constant(v)) => Constant(v)
-    case q"((..$v))" if (v.size > 1) => Tuple(v.map(astParser(_)))
-    case q"$pack.Set.apply[..$t](..$v)" => Set(v.map(astParser(_)))
+    case q"((..$v))" if (v.size > 1)     => Tuple(v.map(astParser(_)))
+    case tree @ q"$pack.$coll.apply[..$t](..$v)" if isTraversable(tree) =>
+      Set(v.map(astParser(_)))
     case q"((scala.this.Predef.ArrowAssoc[$t1]($v1).$arrow[$t2]($v2)))" => Tuple(List(astParser(v1), astParser(v2)))
   }
 

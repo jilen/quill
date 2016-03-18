@@ -557,7 +557,7 @@ class SqlIdiomSpec extends Spec {
           "set" - {
             "direct value" in {
               val q = quote {
-                qr1.filter(t => Set(1, 2).contains(t.i))
+                qr1.filter(t => List(1, 2).contains(t.i))
               }
               mirrorSource.run(q).sql mustEqual
                 "SELECT t.s, t.i, t.l, t.o FROM TestEntity t WHERE t.i IN (1, 2)"
