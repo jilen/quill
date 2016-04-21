@@ -47,6 +47,21 @@ trait SourceMacro extends Quotation with ActionMacro with QueryMacro with Resolv
         runQuery(quotedTree, ast, inPlaceParams, params)(r, s, queryType(t.tpe))
     }
 
+  def runSingle[R, S](quoted: Expr[Quoted[Any]])(implicit r: WeakTypeTag[R], s: WeakTypeTag[S]): Tree = {
+    val t = c.WeakTypeTag(quoted.actualType.baseType(c.weakTypeOf[Quoted[Any]].typeSymbol).typeArgs.head)
+    val ast = this.ast(quoted)
+    val quotedTree = quoted.tree
+    val inPlaceParams = bindingsTree(quotedTree)
+    t.tpe.typeSymbol.fullName.startsWith("scala.Function") match {
+      case true =>
+        val bodyType = c.WeakTypeTag(t.tpe.typeArgs.takeRight(1).head)
+        val params = (1 until t.tpe.typeArgs.size).map(i => Ident(s"p$i")).toList
+        runQuery(quoted.tree, FunctionApply(ast, params), inPlaceParams, params.zip(paramsTypes(t)))(r, s, queryType(bodyType.tpe))
+      case false =>
+        runQuery(quoted.tree, ast, inPlaceParams, Nil, false)(r, s, queryType(t.tpe))
+    }
+  }
+
   private def queryType(tpe: Type) =
     if (tpe <:< c.typeOf[Query[_]])
       c.WeakTypeTag(tpe.baseType(c.typeOf[Query[_]].typeSymbol).typeArgs.head)
