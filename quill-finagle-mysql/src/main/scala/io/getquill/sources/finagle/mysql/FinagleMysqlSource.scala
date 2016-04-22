@@ -31,6 +31,7 @@ class FinagleMysqlSource[N <: NamingStrategy](config: FinagleMysqlSourceConfig[N
     Logger(LoggerFactory.getLogger(classOf[FinagleMysqlSource[_]]))
 
   type QueryResult[T] = Future[List[T]]
+  type SingleQueryResult[T] = Future[T]
   type ActionResult[T] = Future[Result]
   type BatchedActionResult[T] = Future[List[Result]]
 
