@@ -1,14 +1,13 @@
-package io.getquill.sources.async
+package io.getquill.sources.finagle.mysql
 
 import io.getquill.sources.sql._
-import scala.concurrent.{ Await, Future }
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
+import com.twitter.util.Await
+import com.twitter.util.Future
 
 class QueryResultTypeJdbcSpec extends QueryResultTypeSpec {
-  val db = postgres.testPostgresDB
+  val db = testDB
 
-  def await[T](r: Future[T]) = Await.result(r, Duration.Inf)
+  def await[T](r: Future[T]) = Await.result(r)
 
   override def beforeAll = {
     val r1 = await(db.run(deleteAll))

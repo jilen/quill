@@ -80,7 +80,7 @@ CREATE TABLE TestEntity3(
 
 CREATE TABLE Product(
     description VARCHAR(255),
-    id INTEGER NOT NULL AUTO_INCREMENT,
+    id BIGINT NOT NULL AUTO_INCREMENT,
     sku BIGINT,
     PRIMARY KEY (id)
 );

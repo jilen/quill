@@ -87,6 +87,8 @@ class FinagleMysqlSource[N <: NamingStrategy](config: FinagleMysqlSourceConfig[N
     withClient(_.prepare(expanded).select(params(List()): _*)(extractor)).map(_.toList)
   }
 
+  def querySingle[T](sql: String, bind: BindedStatementBuilder[List[Parameter]] => BindedStatementBuilder[List[Parameter]], extractor: Row => T): Future[T] = query(sql, bind, extractor).map(_.head)
+
   private def withClient[T](f: Client => T) =
     currentClient().map {
       client => f(client)
