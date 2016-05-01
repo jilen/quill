@@ -23,6 +23,7 @@ class JdbcSource[D <: SqlIdiom, N <: NamingStrategy](config: JdbcSourceConfig[D,
     Logger(LoggerFactory.getLogger(classOf[JdbcSource[_, _]]))
 
   type QueryResult[T] = List[T]
+  type SingleQueryResult[T] = T
   type ActionResult[T] = Long
   type BatchedActionResult[T] = List[Long]
 
@@ -115,6 +116,9 @@ class JdbcSource[D <: SqlIdiom, N <: NamingStrategy](config: JdbcSourceConfig[D,
       extractResult(rs, extractor)
     }
   }
+
+  def querySingle[T](sql: String, bind: BindedStatementBuilder[PreparedStatement] => BindedStatementBuilder[PreparedStatement], extractor: ResultSet => T): T =
+    query(sql, bind, extractor).head
 
   @tailrec
   private def extractResult[T](rs: ResultSet, extractor: ResultSet => T, acc: List[T] = List()): List[T] =

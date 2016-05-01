@@ -1,11 +1,14 @@
-package io.getquill.sources.jdbc
+package io.getquill.sources.async
 
 import io.getquill.sources.sql._
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class QueryResultTypeJdbcSpec extends QueryResultTypeSpec {
-  val db = h2.testH2DB
+  val db = postgres.testPostgresDB
 
-  def await[T](r: T) = r
+  def await[T](r: Future[T]) = Await.result(r, Duration.Inf)
 
   override def beforeAll = {
     val r1 = db.run(deleteAll)
