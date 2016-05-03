@@ -1,6 +1,7 @@
 package io.getquill.sources.cassandra
 
 import io.getquill._
+import monifu.reactive.Observable
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.FreeSpec
 import org.scalatest.MustMatchers
@@ -10,35 +11,28 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class QueryResultTypeCassandraSpec extends FreeSpec with BeforeAndAfterAll with MustMatchers {
 
-  case class TestEntity(id: Int, s: String, i: Int, l: Long, o: Int)
+  case class OrderTestEntity(id: Int, i: Int)
 
   val entries = List(
-    TestEntity(1, "e1", 1, 1L, 1),
-    TestEntity(2, "e2", 2, 2L, 2),
-    TestEntity(3, "e2", 3, 3L, 3)
+    OrderTestEntity(1, 1),
+    OrderTestEntity(2, 2),
+    OrderTestEntity(3, 3)
   )
 
-  val insert = quote(query[TestEntity].insert)
-  val deleteAll = quote(query[TestEntity].delete)
-  val selectAll = quote(query[TestEntity])
-  val map = quote(query[TestEntity].map(_.id))
-  val filter = quote(query[TestEntity].filter(_.id == 1))
-  val withFilter = quote(query[TestEntity].withFilter(_.id == 1))
-  val sortBy = quote(query[TestEntity].filter(_.id == 1).sortBy(_.id)(Ord.asc))
-  val take = quote(query[TestEntity].take(10))
-  val union = quote(query[TestEntity].union(query[TestEntity]))
-  val entitySize = quote(query[TestEntity].size)
-  val distinct = quote(query[TestEntity].map(_.id).distinct)
+  val insert = quote(query[OrderTestEntity].insert)
+  val deleteAll = quote(query[OrderTestEntity].delete)
+  val selectAll = quote(query[OrderTestEntity])
+  val map = quote(query[OrderTestEntity].map(_.id))
+  val filter = quote(query[OrderTestEntity].filter(_.id == 1))
+  val withFilter = quote(query[OrderTestEntity].withFilter(_.id == 1))
+  val sortBy = quote(query[OrderTestEntity].filter(_.id == 1).sortBy(_.i)(Ord.asc))
+  val take = quote(query[OrderTestEntity].take(10))
+  val entitySize = quote(query[OrderTestEntity].size)
+  val distinct = quote(query[OrderTestEntity].map(_.id).distinct)
 
   override def beforeAll = {
-    case class TestEntity(id: Int, s: String, i: Int, l: Long, o: Int)
-    val cassandraEntries = List(
-      TestEntity(1, "e1", 1, 1L, 1),
-      TestEntity(1, "e2", 2, 2L, 2),
-      TestEntity(1, "e3", 3, 3L, 3)
-    )
-    val r1 = testSyncDB.run(query[TestEntity].delete)
-    val r2 = testSyncDB.run(query[TestEntity].insert)(cassandraEntries)
+    val r1 = testSyncDB.run(deleteAll)
+    val r2 = testSyncDB.run(insert)(entries)
   }
 
   "async" - {
@@ -100,6 +94,21 @@ class QueryResultTypeCassandraSpec extends FreeSpec with BeforeAndAfterAll with 
       "size" in {
         await(db.run(entitySize)) mustEqual entries.size
       }
+    }
+  }
+  "stream" - {
+    import monifu.concurrent.Implicits.globalScheduler
+    val db = testStreamDB
+    def await[T](t: Observable[T]) = {
+      val f = t.foldLeft(List.empty[T])(_ :+ _).asFuture
+      Await.result(f, Duration.Inf)
+    }
+    "query" in {
+      await(db.run(selectAll)) mustEqual Some(entries)
+    }
+
+    "querySingle" in {
+      await(db.run(entitySize)) mustEqual Some(List(3))
     }
   }
 }
