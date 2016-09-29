@@ -91,7 +91,7 @@ lazy val `quill-async` =
     .settings(
       fork in Test := true,
       libraryDependencies ++= Seq(
-        "com.github.mauricio" %% "db-async-common"  % "0.2.20"
+        "com.github.mauricio" %% "db-async-common"  % "0.2.20-DRIP"
       )
     )
     .dependsOn(`quill-sql-jvm` % "compile->compile;test->test")
@@ -103,7 +103,7 @@ lazy val `quill-async-mysql` =
     .settings(
       fork in Test := true,
       libraryDependencies ++= Seq(
-        "com.github.mauricio" %% "mysql-async"      % "0.2.20"
+        "com.github.mauricio" %% "mysql-async"      % "0.2.20-DRIP"
       )
     )
     .dependsOn(`quill-async` % "compile->compile;test->test")
@@ -115,7 +115,7 @@ lazy val `quill-async-postgres` =
     .settings(
       fork in Test := true,
       libraryDependencies ++= Seq(
-        "com.github.mauricio" %% "postgresql-async" % "0.2.19"
+        "com.github.mauricio" %% "postgresql-async" % "0.2.20-DRIP"
       )
     )
     .dependsOn(`quill-async` % "compile->compile;test->test")
