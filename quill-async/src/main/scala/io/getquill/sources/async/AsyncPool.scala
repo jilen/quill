@@ -85,12 +85,6 @@ object AsyncPool {
   }
 }
 
-sealed trait AsyncIOError extends Exception
-case object QueueWaitTimeout extends AsyncIOError
-case object MaxQueueSizeExceed extends AsyncIOError
-case object TransactionAlreadyStarted extends AsyncIOError
-case object ConnectionClosed extends AsyncIOError
-
 case class QueuedConnectionConfig(
   maxQueueSize: Int,
   timeout:      duration.FiniteDuration,

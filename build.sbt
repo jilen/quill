@@ -116,6 +116,7 @@ lazy val commonSettings = ReleasePlugin.extraReleaseCommands ++ Seq(
   scalaVersion := "2.11.8",
   libraryDependencies ++= Seq(
     "org.scalamacros" %% "resetallattrs"  % "1.0.0",
+    "com.lihaoyi"     %% "sourcecode"     % "0.1.2",
     "org.scalatest"   %% "scalatest"      % "2.2.6" % "test",
     "ch.qos.logback"  % "logback-classic" % "1.1.7" % "test",
     "com.google.code.findbugs" % "jsr305" % "3.0.1" % "provided" // just to avoid warnings during compilation
