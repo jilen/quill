@@ -1,13 +1,10 @@
 package io.getquill
 
+import io.getquill.ast._
+import io.getquill.context.sql.idiom.QuestionMarkBindVariables
+import io.getquill.context.sql.idiom.SqlIdiom
 import io.getquill.idiom.StatementInterpolator._
 import java.util.concurrent.atomic.AtomicInteger
-import io.getquill.context.sql.idiom.SqlIdiom
-import io.getquill.ast.UnaryOperation
-import io.getquill.ast.Operation
-import io.getquill.ast.Property
-import io.getquill.ast.StringOperator
-import io.getquill.context.sql.idiom.QuestionMarkBindVariables
 
 trait PostgresDialect
   extends SqlIdiom
@@ -19,6 +16,10 @@ trait PostgresDialect
       case UnaryOperation(StringOperator.`toInt`, ast)  => stmt"${scopedTokenizer(ast)}::integer"
       case operation                                    => super.operationTokenizer.token(operation)
     }
+
+  override implicit def returningTokenizer(implicit strategy: NamingStrategy): Tokenizer[Returning] = Tokenizer[Returning] {
+    case Returning(action: Action, prop, _) => stmt"${action.token} ${strategy.column(prop.name).token}"
+  }
 
   private[getquill] val preparedStatementId = new AtomicInteger
 

@@ -301,12 +301,16 @@ trait SqlIdiom extends Idiom {
       case Delete(table: Entity) =>
         stmt"DELETE FROM ${table.token}"
 
-      case Returning(action, prop, value) =>
-        action.token
+      case returning: Returning =>
+        returning.token
 
       case other =>
         fail(s"Action ast can't be translated to sql: '$other'")
     }
+  }
+
+  implicit def returningTokenizer(implicit strategy: NamingStrategy): Tokenizer[Returning] = Tokenizer[Returning] {
+    case Returning(action, prop, value) => action.token
   }
 
   implicit def entityTokenizer(implicit strategy: NamingStrategy): Tokenizer[Entity] = Tokenizer[Entity] {
