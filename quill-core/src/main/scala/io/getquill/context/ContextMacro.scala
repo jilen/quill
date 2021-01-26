@@ -81,7 +81,7 @@ trait ContextMacro extends Quotation {
     c.info("Dynamic query")
     q"""
       val (idiom, naming) = ${idiomAndNamingDynamic}
-      idiom.translate(io.getquill.norm.RepropagateQuats($ast))(naming)
+      idiom.translateCached(io.getquill.norm.RepropagateQuats($ast))(naming)
     """
   }
 
