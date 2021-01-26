@@ -5,7 +5,7 @@ import scala.collection.immutable.{ Map => IMap }
 object StablizeLifts {
 
   def stablize(ast: Ast): (Ast, State) = {
-    val (a, t) = StubLiftValus(State(IMap.empty, 0)).apply(ast)
+    val (a, t) = StubLiftValus(State(IMap.empty, Token(0))).apply(ast)
     (a, t.state)
   }
 
@@ -14,18 +14,18 @@ object StablizeLifts {
   }
 
   case class State(
-    replaceTable: IMap[Int, Any],
-    nextStubId:   Int
+    replaceTable: IMap[Token, Any],
+    nextToken:    Token
   ) {
-    def addReplace(id: Int, value: Any): State = {
+    def addReplace(t: Token, value: Any): State = {
       this.copy(
-        replaceTable = replaceTable + (id -> value),
-        nextStubId = nextStubId + 1
+        replaceTable = replaceTable + (t -> value),
+        nextToken = Token(t.id + 1)
       )
     }
   }
 
-  class Stub(val id: Int) extends AnyVal
+  case class Token(id: Long)
 
   case class RevertLiftValues(state: State) extends StatelessTransformer {
     override def apply(ast: Ast): Ast = ast match {
@@ -35,16 +35,15 @@ object StablizeLifts {
 
     def applyLift(ast: Lift) = ast match {
       case l: ScalarValueLift =>
-        val value = state.replaceTable(l.value.asInstanceOf[Stub].id)
+        val value = state.replaceTable(l.value.asInstanceOf[Token])
         l.copy(value = value)
       case l: ScalarQueryLift =>
-        val value = state.replaceTable(l.value.asInstanceOf[Stub].id)
-        l.copy(value = value)
+        l
       case l: CaseClassValueLift =>
-        val value = state.replaceTable(l.value.asInstanceOf[Stub].id)
+        val value = state.replaceTable(l.value.asInstanceOf[Token])
         l.copy(value = value)
       case l: CaseClassQueryLift =>
-        val value = state.replaceTable(l.value.asInstanceOf[Stub].id)
+        val value = state.replaceTable(l.value.asInstanceOf[Token])
         l.copy(value = value)
 
     }
@@ -53,29 +52,27 @@ object StablizeLifts {
   case class StubLiftValus(state: State) extends StatefulTransformer[State] {
     override def apply(e: Ast): (Ast, StatefulTransformer[State]) = e match {
       case l: Lift =>
-        val (ast, ss) = applyLift(l)(state)
-        (ast, StubLiftValus(state))
+        val (ast, ss) = applyLift(l)
+        (ast, StubLiftValus(ss))
       case others =>
         super.apply(others)
     }
 
-    private def applyLift(ast: Lift)(s: State): (Ast, State) = ast match {
+    private def applyLift(ast: Lift): (Ast, State) = ast match {
       case l: ScalarValueLift =>
-        val stub = new Stub(s.nextStubId)
+        val stub = state.nextToken
         val stablized = l.copy(value = stub)
-        stablized -> state.addReplace(s.nextStubId, stub)
+        stablized -> state.addReplace(stub, l.value)
       case l: ScalarQueryLift =>
-        val stub = new Stub(s.nextStubId)
-        val stablized = l.copy(value = stub)
-        stablized -> state.addReplace(s.nextStubId, stub)
+        l -> state
       case l: CaseClassValueLift =>
-        val stub = new Stub(s.nextStubId)
+        val stub = state.nextToken
         val stablized = l.copy(value = stub)
-        stablized -> state.addReplace(s.nextStubId, stub)
+        stablized -> state.addReplace(stub, l.value)
       case l: CaseClassQueryLift =>
-        val stub = new Stub(s.nextStubId)
+        val stub = state.nextToken
         val stablized = l.copy(value = stub)
-        stablized -> state.addReplace(s.nextStubId, stub)
+        stablized -> state.addReplace(stub, l.value)
     }
   }
 }
