@@ -38,7 +38,8 @@ object StablizeLifts {
         val value = state.replaceTable(l.value.asInstanceOf[Token])
         l.copy(value = value)
       case l: ScalarQueryLift =>
-        l
+        val value = state.replaceTable(l.value.asInstanceOf[Token])
+        l.copy(value = value)
       case l: CaseClassValueLift =>
         val value = state.replaceTable(l.value.asInstanceOf[Token])
         l.copy(value = value)
@@ -64,7 +65,9 @@ object StablizeLifts {
         val stablized = l.copy(value = stub)
         stablized -> state.addReplace(stub, l.value)
       case l: ScalarQueryLift =>
-        l -> state
+        val stub = state.nextToken
+        val stablized = l.copy(value = stub)
+        stablized -> state.addReplace(stub, l.value)
       case l: CaseClassValueLift =>
         val stub = state.nextToken
         val stablized = l.copy(value = stub)
