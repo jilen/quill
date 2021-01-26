@@ -7,7 +7,6 @@ object AstCaching {
   private val cache = new ConcurrentHashMap[Ast, Ast]
 
   def apply(f: Ast => Ast): Ast => Ast = { ori =>
-    val p = util.Messages.qprint
     val (stablized, state) = StablizeLifts.stablize(ori)
     val cachedR = cache.get(stablized)
     val normalized = if (cachedR != null) {
